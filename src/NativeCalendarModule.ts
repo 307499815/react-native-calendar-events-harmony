@@ -4,7 +4,7 @@ import { TurboModuleRegistry } from "react-native";
 export interface Spec extends TurboModule {
   requestPermissions(): Promise<string>;
   checkPermissions() : Promise<string>;
-  findCalendars(): Promise<Object>;
+  findCalendars(): Promise<Object[]>;
   saveCalendar(calendarOptions: Object): Promise<string> ;
   removeCalendar(id: string): Promise<number>;
   removeCalendarByName(name: string): Promise<number>;
@@ -12,7 +12,7 @@ export interface Spec extends TurboModule {
   findEventById(calendarId:string, eventId: string): Promise<Object | null>
   fetchAllEvents(startDate: string, endDate: string, calendarIds?: string[]): Promise<Object>;
 
-  saveEvent(calendarId:string, details: Object, options?: Object): Promise<String>;
+  saveEvent(calendarId:string, details: Object, options?: Object): Promise<string>;
   updateEvent(calendarId:string, details: Object, options?: Object): Promise<number>;
   removeEvent(calendarId:string, eventId: string): Promise<number>;
   saveEvents(calendarId:string, detailsList: Object[], options?: Object): Promise<string[]>;

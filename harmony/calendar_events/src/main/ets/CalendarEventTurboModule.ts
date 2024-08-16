@@ -122,31 +122,19 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
   }
 
   //saveCalendar
-  async saveCalendar(calendarOptions: CalendarOptions): Promise<boolean> {
-    let checkPermission: string = await this.checkPermissions();
-    if (checkPermission == authorized) {
-      let saveCalendarBool : boolean = false;
+  async saveCalendar(calendarOptions: CalendarOptions): Promise<string> {
+    await this.checkHasPermissions();
+   
       const calendarAccount: calendarManager.CalendarAccount = {
         name: calendarOptions.title,
-        type: getCalendarType(calendarOptions.type),
+        type: calendarOptions.type || calendarManager.CalendarType.LOCAL,
         displayName: calendarOptions.displayName != undefined ? calendarOptions.displayName : ""
       };
-      calendarMgr = calendarManager.getCalendarManager(this.ctx.uiAbilityContext);
-      await calendarMgr.createCalendar(calendarAccount).then((data: calendarManager.Calendar) => {
-        saveCalendarBool = true;
-      }).catch((error : BusinessError) => {
-        Logger.error(`saveCalendarAsync Failed to add event, err -> ${JSON.stringify(error)} `);
-      });
-      if(saveCalendarBool) {
-        return new Promise((resolve) => {
-          resolve(true);
-        });
-      }
-    } else {
-      return new Promise((resolve) => {
-        resolve(false);
-      });
-    }
+      const calendarMgr = this.getCalendarManager();
+      if(!calendarManager) throw 'calendarMgr is null';
+      const calendar = await calendarMgr.createCalendar(calendarAccount);
+      if(!calendar) return '';
+      return calendar.id + '';
   }
 
   getCalendarManager(): calendarManager.CalendarManager | null {

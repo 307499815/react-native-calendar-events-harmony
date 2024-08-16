@@ -9,7 +9,7 @@ export default class ReactNativeCalendarEvents{
     static checkPermissions(): Promise<string> {
         return RNCalendarEvents.checkPermissions()
     }
-    static findCalendars(): Promise<Object> {
+    static findCalendars(): Promise<Object[]> {
         return RNCalendarEvents.findCalendars()
     }
 
@@ -21,6 +21,9 @@ export default class ReactNativeCalendarEvents{
         return RNCalendarEvents.removeCalendar(id)
     }
 
+    async removeCalendarByName(name: string): Promise<number> {
+        return RNCalendarEvents.removeCalendarByName(name);
+    }
 
     static findEventById(calendarId: string, eventId: string): Promise<Object | null> {
         return RNCalendarEvents.findEventById(calendarId, eventId)
@@ -49,9 +52,4 @@ export default class ReactNativeCalendarEvents{
     static updateEvent(calendarId: string, details: Object, options?: Object): Promise<number> {
         return RNCalendarEvents.updateEvent(calendarId,details, options);
     }
-
-    async removeCalendarByName(name: string): Promise<number> {
-        return RNCalendarEvents.removeCalendarByName(name);
-    }
-
 };
