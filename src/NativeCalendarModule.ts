@@ -1,6 +1,5 @@
 import type { TurboModule } from "react-native/Libraries/TurboModule/RCTExport";
 import { TurboModuleRegistry } from "react-native";
-import {CalendarOptions, EventDetails, Options} from "./calendarType"
 
 export interface Spec extends TurboModule {
   requestPermissions(): Promise<string>;
@@ -16,8 +15,8 @@ export interface Spec extends TurboModule {
   saveEvent(calendarId:string, details: Object, options?: Object): Promise<String>;
   updateEvent(calendarId:string, details: Object, options?: Object): Promise<number>;
   removeEvent(calendarId:string, eventId: string): Promise<number>;
-  saveEvents(calendarId:string, detailsList: EventDetails[], options?: Options): Promise<string[]>;
-  removeEvents(calendarId: string, ids: string[], options?: Options): Promise<number>;
+  saveEvents(calendarId:string, detailsList: Object[], options?: Object): Promise<string[]>;
+  removeEvents(calendarId: string, ids: string[], options?: Object): Promise<number>;
 }
 
 export default TurboModuleRegistry.get<Spec>("RNCalendarEvents") as Spec;
