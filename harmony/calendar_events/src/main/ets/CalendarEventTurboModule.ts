@@ -127,7 +127,7 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
    
       const calendarAccount: calendarManager.CalendarAccount = {
         name: calendarOptions.title,
-        type: calendarOptions.type || calendarManager.CalendarType.LOCAL,
+        type: calendarManager.CalendarType[calendarOptions.type] || calendarManager.CalendarType.LOCAL,
         displayName: calendarOptions.displayName != undefined ? calendarOptions.displayName : ""
       };
       const calendarMgr = this.getCalendarManager();
@@ -158,7 +158,7 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
     const calendarMgr = this.getCalendarManager();
     if(!calendarMgr) throw 'calendarMgr is null';
     const calendars = await calendarMgr.getAllCalendars();
-    return calendars.find(cal => cal.id === id) || null;
+    return calendars.find(cal => `${cal.id}}` === id) || null;
   }
 
   //removeCalendar
@@ -174,7 +174,9 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
     };
     const calendarMgr = this.getCalendarManager();
     if(!calendarMgr) throw 'calendarMgr is null';
-    await calendarMgr.deleteCalendar(calendarAccount);
+    await calendarMgr.getCalendar(calendarAccount).then(async (calendarData:calendarManager.Calendar) => {
+      await calendarMgr.deleteCalendar(calendarData);
+    });
     return 1;
   }
 
@@ -192,7 +194,10 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
     if(!calendar) return 0;
     const calendarMgr = this.getCalendarManager();
     if(!calendarMgr) throw 'calendarMgr is null';
-    return await calendarMgr.deleteCalendar({name: calendar.title, type: getCalendarType(calendar.type)});
+    await calendarMgr.getCalendar({name: calendar.title, type: getCalendarType(calendar.type)}).then(async (calendarData:calendarManager.Calendar) => {
+      await calendarMgr.deleteCalendar(calendarData);
+    });
+    return 1; // Ninjar
   }
 
   //findEventById
@@ -233,7 +238,7 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
     await this.checkHasPermissions();
     const calendar = calendarId ? await this.getCalendarById(calendarId) : await this.getDefaultCalendar();
     if(!calendar) throw 'Calendar not found';
-    const event = calendarManager.Event.createEvent(details);
+    const event = details; // calendarManager.Event.createEvent(details);
     const eventId = await calendar.addEvent(event);
     return eventId + '';
   }
@@ -245,7 +250,7 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
     if(!calendar) throw 'Calendar not found';
     const eventIds: string[] = [];
     for(const details of detailsList) {
-      const event = calendarManager.Event.createEvent(details);
+      const event = details; // calendarManager.Event.createEvent(details);
       const eventId = await calendar.addEvent(event);
       eventIds.push(eventId + '');
     }
@@ -257,7 +262,7 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
     await this.checkHasPermissions();
     const calendar = calendarId ? await this.getCalendarById(calendarId) : await this.getDefaultCalendar();
     if(!calendar) return 0;
-    const event = calendarManager.Event.createEvent(details);
+    const event = details; // calendarManager.Event.createEvent(details);
     await calendar.updateEvent(event);
     return 1;
   }
