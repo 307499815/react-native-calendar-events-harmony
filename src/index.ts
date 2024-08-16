@@ -13,28 +13,45 @@ export default class ReactNativeCalendarEvents{
         return RNCalendarEvents.findCalendars()
     }
 
-    static saveCalendar(calendarOptions: Object): Promise<boolean> {
+    static saveCalendar(calendarOptions: Object): Promise<string> {
         return RNCalendarEvents.saveCalendar(calendarOptions)
     }
 
-    static removeCalendar(id: string): Promise<String> {
+    static removeCalendar(id: string): Promise<number> {
         return RNCalendarEvents.removeCalendar(id)
     }
 
-    static findEventById(id: string): Promise<Object | null> {
-        return RNCalendarEvents.findEventById(id)
+
+    static findEventById(calendarId: string, eventId: string): Promise<Object | null> {
+        return RNCalendarEvents.findEventById(calendarId, eventId)
     }
  
     static fetchAllEvents(startDate: string, endDate: string, calendarIds?: string[]): Promise<Object> {
         return RNCalendarEvents.fetchAllEvents(startDate, endDate, calendarIds)
     }
     
-    static saveEvent(title: string, details: Object, options?: Object): Promise<String> {
-        return RNCalendarEvents.saveEvent(title, details, options)
+    static saveEvent(calendarId:string,  details: Object, options?: Object): Promise<String> {
+        return RNCalendarEvents.saveEvent(calendarId, details, options)
     }
 
-    static removeEvent(id: string): Promise<String> {
-        return RNCalendarEvents.removeEvent(id)
+    static removeEvent(calendarId:string, eventId: string): Promise<number> {
+        return RNCalendarEvents.removeEvent(calendarId, eventId)
+    }
+
+    static saveEvents(calendarId: string, detailsList: EventDetails[], options?:Options): Promise<string[]> {
+        return RNCalendarEvents.saveEvents(calendarId, detailsList, options);
+    }
+
+    static removeEvents(calendarId: string, eventIds: string[], options?: Options): Promise<number> {
+        return RNCalendarEvents.removeEvents(calendarId, eventIds, options);
+    }
+
+    static updateEvent(calendarId: string, details: Object, options?: Object): Promise<number> {
+        return RNCalendarEvents.updateEvent(calendarId,details, options);
+    }
+
+    async removeCalendarByName(name: string): Promise<number> {
+        return RNCalendarEvents.removeCalendarByName(name);
     }
 
 };

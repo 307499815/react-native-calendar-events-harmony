@@ -149,163 +149,146 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
     }
   }
 
-  //removeCalendar
-  async removeCalendarById(id: string): Promise<Boolean> {
-    let removeCalendarBool : boolean = false;
-    let calendar : calendarManager.Calendar | undefined = undefined;
-    //根据id，查询calendar
-    let findCalendarById : CalendarOptions | null;
-    (await this.findCalendars()).forEach(item => {
-      if (item.id.toString() == id && item.title != "phone") {
-        findCalendarById = item
-      }
-    })
-    if (findCalendarById) {
-      const calendarAccount: calendarManager.CalendarAccount = {
-        name: findCalendarById.title,
-        type: getCalendarType(findCalendarById.type)
-      };
-      calendarMgr = calendarManager.getCalendarManager(this.ctx.uiAbilityContext);
-      await calendarMgr?.getCalendar(calendarAccount).then(async (calendarData:calendarManager.Calendar) => {
-        calendar = calendarData;
-        await calendarMgr?.deleteCalendar(calendarData).then(() => {
-          removeCalendarBool = true
-        }).catch((err: BusinessError) => {
-          Logger.error(`removeCalendarAsync Failed to remove calendar, err -> ${JSON.stringify(err)}`);
-        });
-      })
-      return new Promise((resolve) => {
-        resolve(removeCalendarBool);
-      });
-    } else {
-      return new Promise((resolve) => {
-        Logger.info(`removeCalendarAsync false, calendar is not exist`);
-        resolve(false);
-      });
-    }
+  getCalendarManager(): calendarManager.CalendarManager | null {
+    return calendarManager.getCalendarManager(this.ctx.uiAbilityContext);
   }
 
-  async removeCalendar(id: string): Promise<string> {
+  async checkHasPermissions(): Promise<string> {
     let checkPermission: string = await this.checkPermissions();
-    if (checkPermission == authorized) {
-      let saveCalendarBool: Boolean = await this.removeCalendarById(id);
-      if (saveCalendarBool) {
-        return new Promise((resolve) => {
-          resolve("success");
-        });
-      }
-    }
-    return new Promise((resolve, reject) => {
-      resolve("fail");
-    });
+    if (checkPermission !== authorized) throw 'Permission denied';
+    return checkPermission;
+  }
+
+  async getDefaultCalendar(): Promise<calendarManager.Calendar | null> {
+    const calendarMgr = this.getCalendarManager();
+    if(!calendarMgr) throw 'calendarMgr is null';
+    return await calendarMgr.getCalendar();
+  }
+
+  async getCalendarById(id: string): Promise<calendarManager.Calendar | null> {
+    if(!id) return null;
+    const calendarMgr = this.getCalendarManager();
+    if(!calendarMgr) throw 'calendarMgr is null';
+    const calendars = await calendarMgr.getAllCalendars();
+    return calendars.find(cal => cal.id === id) || null;
+  }
+
+  //removeCalendar
+  async removeCalendarById(id: string): Promise<number> {
+    await this.checkHasPermissions();
+
+    const calendars = await this.findCalendars();
+    const calendar = calendars.find(cal => cal.id === id && cal.title !== 'phone');
+    if(!calendar) return 0;
+    const calendarAccount: calendarManager.CalendarAccount = {
+      name: calendar.title,
+      type: getCalendarType(calendar.type)
+    };
+    const calendarMgr = this.getCalendarManager();
+    if(!calendarMgr) throw 'calendarMgr is null';
+    await calendarMgr.deleteCalendar(calendarAccount);
+    return 1;
+  }
+
+  async removeCalendar(id: string): Promise<number> {
+    let checkPermission: string = await this.checkPermissions();
+    if (checkPermission !== authorized) throw 'Permission denied';
+    return await this.removeCalendarById(id);
+  }
+
+  async removeCalendarByName(name: string): Promise<number> {
+    let checkPermission: string = await this.checkPermissions();
+    if (checkPermission !== authorized) throw 'Permission denied';
+    const calendars = await this.findCalendars();
+    const calendar = calendars.find(cal => cal.title === name && cal.title !== 'phone');
+    if(!calendar) return 0;
+    const calendarMgr = this.getCalendarManager();
+    if(!calendarMgr) throw 'calendarMgr is null';
+    return await calendarMgr.deleteCalendar({name: calendar.title, type: getCalendarType(calendar.type)});
   }
 
   //findEventById
-  async findEventById(id: string): Promise<calendarManager.Event | null> {
-    let calendar : calendarManager.Calendar | undefined = undefined;
-    let event : calendarManager.Event = undefined;
-    let checkPermission: string = await this.checkPermissions();
-    if (checkPermission == authorized) {
-      calendarMgr = calendarManager.getCalendarManager(this.ctx.uiAbilityContext);
-      await calendarMgr?.getCalendar().then(async (dataCalendar:calendarManager.Calendar) => {
-        calendar = dataCalendar;
-        const filter = calendarManager.EventFilter.filterById([Number.parseFloat(id)]);
-        await calendar.getEvents(filter).then((dataEvent: calendarManager.Event[]) => {
-          if (dataEvent && dataEvent.length >= 1) {
-            event = dataEvent[0]
-          }
-        }).catch((err: BusinessError) => {
-          Logger.error(`Failed to get events, err -> ${JSON.stringify(err)}`);
-        });
-      });
-    }
-    return new Promise((resolve, reject) => {
-      resolve(event);
-    });
+  async findEventById(calendarId: string, eventId: string): Promise<calendarManager.Event | null> {
+    await this.checkHasPermissions();
+    const calendar : calendarManager.Calendar = await this.getCalendarById(calendarId);
+    if(!calendar) return null;
+    const filter = calendarManager.EventFilter.filterById([Number.parseFloat(eventId)]);
+    const events = await calendar.getEvents(filter);
+    return events?.[0] || null;
   }
 
   //fetchAllEvents
   async fetchAllEvents(startDate: string, endDate: string, calendarIds?: string[]): Promise<calendarManager.Event[]> {
-    let checkPermission: string = await this.checkPermissions();
-    let event: calendarManager.Event[] = []
-    if (checkPermission == authorized) {
-      let calendar : calendarManager.Calendar | undefined = undefined;
-      calendarMgr = calendarManager.getCalendarManager(this.ctx.uiAbilityContext);
-      await calendarMgr?.getCalendar().then(async (dataCalendar: calendarManager.Calendar) => {
-        calendar = dataCalendar;
-        const eventFilter = calendarManager.EventFilter;
-        let filter = null;
-        if (calendarIds && calendarIds.length > 0) {
-          filter = eventFilter.filterById(calendarIds.map(Number));
-        } else {
-          filter = eventFilter.filterByTime(Number.parseFloat(startDate), Number.parseFloat(endDate))
-        }
-        await calendar.getEvents(filter).then((dataEvent: calendarManager.Event[]) => {
-          Logger.info(`fetchAllEventsAsync Succeeded to get events, data -> ${JSON.stringify(dataEvent)}`);
-          event = dataEvent
-        }).catch((err: BusinessError) => {
-          Logger.error(`fetchAllEventsAsync Failed to get events, err -> ${JSON.stringify(err)}`);
-        });
-      });
+    await this.checkHasPermissions();
+    let calendars : calendarManager.Calendar[] = [];
+    if(calendarIds?.length) {
+      calendars = await Promise.all(calendarIds.map(id => this.getCalendarById(id)));
+    } else {
+      const calendar = await this.getDefaultCalendar();
+      if(calendar) calendars.push(calendar);
     }
-    return new Promise((resolve, reject) => {
-      resolve(event);
-    });
+    const events: calendarManager.Event[] = [];
+    for(const calendar of calendars) {
+      if(!calendar) continue;
+      let filter = undefined;
+      if(startDate && endDate) {
+        filter = calendarManager.EventFilter.filterByTime(Number.parseInt(startDate), Number.parseInt(endDate));
+      }
+      const events = await calendar.getEvents(filter);
+      events.push(...events);
+    }
+    return events;
   }
 
   //saveEvent
-  async saveEvent(title: string, details: EventDetails, options?: Options): Promise<String> {
-    let checkPermission: string = await this.checkPermissions();
-    if (checkPermission == authorized) {
-      let saveCalendarBool : boolean = false;
-      let calendar : calendarManager.Calendar | undefined = undefined;
-      const events: calendarManager.Event = details;
-      calendarMgr = calendarManager.getCalendarManager(this.ctx.uiAbilityContext);
-      await calendarMgr?.getCalendar().then(
-        async (calendarData:calendarManager.Calendar) => {
-          Logger.info(`saveEventAsync Succeeded to get calendar, data -> ${JSON.stringify(calendarData)}`);
-          calendar = calendarData;
-          await calendar?.addEvent(events).then((data: number) => {
-            saveCalendarBool = true
-          }).catch((err: BusinessError) => {
-            Logger.error(`saveCalendarAsync Failed to add event, err -> ${JSON.stringify(err)} `);
-          });
-        })
-      if (saveCalendarBool) {
-        return new Promise((resolve) => {
-          resolve("success");
-        });
-      }
+  async saveEvent(calendarId: string, details: EventDetails, options?: Options): Promise<string> {
+    await this.checkHasPermissions();
+    const calendar = calendarId ? await this.getCalendarById(calendarId) : await this.getDefaultCalendar();
+    if(!calendar) throw 'Calendar not found';
+    const event = calendarManager.Event.createEvent(details);
+    const eventId = await calendar.addEvent(event);
+    return eventId + '';
+  }
+
+  //saveEvents
+  async saveEvents(calendarId: string, detailsList: EventDetails[], options?: Options): Promise<string[]> {
+    await this.checkHasPermissions();
+    const calendar = calendarId ? await this.getCalendarById(calendarId) : await this.getDefaultCalendar();
+    if(!calendar) throw 'Calendar not found';
+    const eventIds: string[] = [];
+    for(const details of detailsList) {
+      const event = calendarManager.Event.createEvent(details);
+      const eventId = await calendar.addEvent(event);
+      eventIds.push(eventId + '');
     }
-    return new Promise((resolve, reject) => {
-      resolve("fail");
-    });
+    return eventIds;
+  }
+
+  //updateEvent
+  async updateEvent(calendarId: string, details: EventDetails, options?: Options): Promise<number> {
+    await this.checkHasPermissions();
+    const calendar = calendarId ? await this.getCalendarById(calendarId) : await this.getDefaultCalendar();
+    if(!calendar) return 0;
+    const event = calendarManager.Event.createEvent(details);
+    await calendar.updateEvent(event);
+    return 1;
   }
 
   //removeEvent
-  async removeEvent(id: string): Promise<string> {
-    let checkPermission: string = await this.checkPermissions();
-    if (checkPermission == authorized) {
-      let removeCalendarBool : boolean = false;
-      let calendar : calendarManager.Calendar | undefined = undefined;
-      calendarMgr = calendarManager.getCalendarManager(this.ctx.uiAbilityContext);
-      await calendarMgr?.getCalendar().then(
-        async (calendarData:calendarManager.Calendar) => {
-          calendar = calendarData;
-          await calendar?.deleteEvent(Number.parseFloat(id)).then(() => {
-            removeCalendarBool = true
-          }).catch((err: BusinessError) => {
-            Logger.error(`removeEventAsync Failed to delete event, err -> ${JSON.stringify(err)}`);
-          });
-        })
-      if (removeCalendarBool) {
-        return new Promise((resolve) => {
-          resolve("success");
-        });
-      }
-    }
-    return new Promise((resolve, reject) => {
-      resolve("fail");
-    });
+  async removeEvent(calendarId: string, eventId: string): Promise<number> {
+    await this.checkHasPermissions();
+    const calendar = calendarId ? await this.getCalendarById(calendarId) : await this.getDefaultCalendar();
+    if(!calendar) return 0;
+    await calendar.deleteEvent(Number.parseInt(eventId));
+    return 1;
+  }
+
+  async removeEvents(calendarId: string, eventIds: string[]): Promise<number> {
+    await this.checkHasPermissions();
+    const calendar = calendarId ? await this.getCalendarById(calendarId) : await this.getDefaultCalendar();
+    if(!calendar) return 0;
+    const ids = eventIds.map(id => Number.parseInt(id));
+    await calendar.deleteEvents(ids);
+    return ids.length;
   }
 }
