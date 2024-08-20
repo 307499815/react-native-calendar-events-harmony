@@ -127,7 +127,7 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
    
       const calendarAccount: calendarManager.CalendarAccount = {
         name: calendarOptions.title,
-        type: calendarManager.CalendarType[calendarOptions.type] || calendarManager.CalendarType.LOCAL,
+        type: getCalendarType(calendarOptions.type),
         displayName: calendarOptions.displayName != undefined ? calendarOptions.displayName : ""
       };
       const calendarMgr = this.getCalendarManager();
