@@ -158,7 +158,9 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
     const calendarMgr = this.getCalendarManager();
     if(!calendarMgr) throw 'calendarMgr is null';
     const calendars = await calendarMgr.getAllCalendars();
-    return calendars.find(cal => `${cal.id}}` === id) || null;
+    return calendars.find(cal => {
+      return cal.id == Number(id)
+    }) || null;
   }
 
   //removeCalendar
@@ -237,7 +239,7 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
   async saveEvent(calendarId: string, details: EventDetails, options?: Options): Promise<string> {
     await this.checkHasPermissions();
     const calendar = calendarId ? await this.getCalendarById(calendarId) : await this.getDefaultCalendar();
-    if(!calendar) throw 'Calendar not found';
+    if(!calendar) throw '[saveEvent] Calendar not found:' + calendarId;
     const event = details; // calendarManager.Event.createEvent(details);
     const eventId = await calendar.addEvent(event);
     return eventId + '';
@@ -247,7 +249,7 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
   async saveEvents(calendarId: string, detailsList: EventDetails[], options?: Options): Promise<string[]> {
     await this.checkHasPermissions();
     const calendar = calendarId ? await this.getCalendarById(calendarId) : await this.getDefaultCalendar();
-    if(!calendar) throw 'Calendar not found';
+    if(!calendar) throw '[saveEvents] Calendar not found:' + calendarId;
     const eventIds: string[] = [];
     for(const details of detailsList) {
       const event = details; // calendarManager.Event.createEvent(details);
