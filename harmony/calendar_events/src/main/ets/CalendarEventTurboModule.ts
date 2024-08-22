@@ -124,17 +124,17 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
   //saveCalendar
   async saveCalendar(calendarOptions: CalendarOptions): Promise<string> {
     await this.checkHasPermissions();
-   
-      const calendarAccount: calendarManager.CalendarAccount = {
-        name: calendarOptions.title,
-        type: getCalendarType(calendarOptions.type),
-        displayName: calendarOptions.displayName != undefined ? calendarOptions.displayName : ""
-      };
-      const calendarMgr = this.getCalendarManager();
-      if(!calendarManager) throw 'calendarMgr is null';
-      const calendar = await calendarMgr.createCalendar(calendarAccount);
-      if(!calendar) return '';
-      return calendar.id + '';
+
+    const calendarAccount: calendarManager.CalendarAccount = {
+      name: calendarOptions.title,
+      type: getCalendarType(calendarOptions.type),
+      displayName: calendarOptions.displayName != undefined ? calendarOptions.displayName : ""
+    };
+    const calendarMgr = this.getCalendarManager();
+    if(!calendarManager) throw 'calendarMgr is null';
+    const calendar = await calendarMgr.createCalendar(calendarAccount);
+    if(!calendar) return '';
+    return calendar.id + '';
   }
 
   getCalendarManager(): calendarManager.CalendarManager | null {

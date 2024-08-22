@@ -21,7 +21,7 @@ export default class ReactNativeCalendarEvents{
         return RNCalendarEvents.removeCalendar(id)
     }
 
-    async removeCalendarByName(name: string): Promise<number> {
+    static removeCalendarByName(name: string): Promise<number> {
         return RNCalendarEvents.removeCalendarByName(name);
     }
 
