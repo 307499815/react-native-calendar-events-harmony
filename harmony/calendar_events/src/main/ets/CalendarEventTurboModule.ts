@@ -134,6 +134,7 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
     if(!calendarManager) throw 'calendarMgr is null';
     const calendar = await calendarMgr.createCalendar(calendarAccount);
     if(!calendar) return '';
+    Logger.info(`saveCalendar ${calendar.id}`);
     return calendar.id + '';
   }
 
@@ -214,25 +215,41 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
 
   //fetchAllEvents
   async fetchAllEvents(startDate: string, endDate: string, calendarIds?: string[]): Promise<calendarManager.Event[]> {
-    await this.checkHasPermissions();
-    let calendars : calendarManager.Calendar[] = [];
-    if(calendarIds?.length) {
-      calendars = await Promise.all(calendarIds.map(id => this.getCalendarById(id)));
-    } else {
-      const calendar = await this.getDefaultCalendar();
-      if(calendar) calendars.push(calendar);
-    }
-    const events: calendarManager.Event[] = [];
-    for(const calendar of calendars) {
-      if(!calendar) continue;
-      let filter = undefined;
-      if(startDate && endDate) {
-        filter = calendarManager.EventFilter.filterByTime(Number.parseInt(startDate), Number.parseInt(endDate));
+    try {
+      await this.checkHasPermissions();
+      let calendars : calendarManager.Calendar[] = [];
+      if(calendarIds?.length) {
+        calendars = await Promise.all(calendarIds.map(id => this.getCalendarById(id)));
+      } else {
+        const calendar = await this.getDefaultCalendar();
+        if(calendar) calendars.push(calendar);
       }
-      const events = await calendar.getEvents(filter);
-      events.push(...events);
+      const events: calendarManager.Event[] = [];
+      for(const calendar of calendars) {
+        if(!calendar) continue;
+        // let filter: calendarManager.EventFilter = undefined;
+        // if(startDate && endDate) {
+        //   filter = calendarManager.EventFilter.filterByTime(Number.parseInt(startDate), Number.parseInt(endDate));
+        // }
+        // events.push(...(await calendar.getEvents(filter, null)));
+
+        // 上面的写法会崩
+        const result = await new Promise((resolve, reject) => {
+          calendar.getEvents((err: BusinessError, data: calendarManager.Event[]) => {
+            if (err) {
+              resolve([]);
+            } else {
+              resolve(data);
+            }
+          });
+        }) as calendarManager.Event[];
+        events.push(...result);
+      }
+      return events;
+    } catch (error) {
+      Logger.error(`fetchAllEvents error: ${error} ${error.stack}`);
+      throw error;
     }
-    return events;
   }
 
   //saveEvent
