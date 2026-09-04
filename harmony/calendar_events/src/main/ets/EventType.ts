@@ -62,6 +62,7 @@ export type RecurrenceRule = {
   recurrenceFrequency: RecurrenceFrequency;
   expire?: number;
   interval?: number;
+  daysOfWeek?: number[];
 }
 export interface EventService {
   type: ServiceType;
