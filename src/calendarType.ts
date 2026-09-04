@@ -88,6 +88,7 @@ export interface Options {
   export type RecurrenceRule = {
     recurrenceFrequency: RecurrenceFrequency;
     expire?: number;
+    interval?: number;
   }
   export interface EventService {
     type: ServiceType;
