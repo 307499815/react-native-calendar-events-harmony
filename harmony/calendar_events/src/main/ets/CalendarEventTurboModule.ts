@@ -267,10 +267,25 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
     await this.checkHasPermissions();
     const calendar = calendarId ? await this.getCalendarById(calendarId) : await this.getDefaultCalendar();
     if(!calendar) throw '[saveEvents] Calendar not found:' + calendarId;
-    return await Promise.all(detailsList.map(async details => {
-      const eventId = await calendar.addEvent(details);
-      return eventId + '';
+    const createdIds: number[] = [];
+    const errors: BusinessError[] = [];
+    const eventIds = await Promise.all(detailsList.map(async details => {
+      try {
+        const eventId = await calendar.addEvent(details);
+        createdIds.push(eventId);
+        return eventId + '';
+      } catch (error) {
+        errors.push(error);
+        return '';
+      }
     }));
+    if(errors.length) {
+      if(createdIds.length) {
+        await calendar.deleteEvents(createdIds);
+      }
+      throw errors[0];
+    }
+    return eventIds;
   }
 
   //updateEvent
